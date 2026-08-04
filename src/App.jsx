@@ -4,15 +4,16 @@ import { OrbitControls, Float } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { Leva, useControls } from "leva";
 import Experience from "./Experience.jsx";
+import CloudEffect from "./CloudEffect.jsx";
 
 export default function App() {
   const { bgColor } = useControls("Background", {
-    bgColor: { value: "#101010" },
+    bgColor: { value: "#000000" },
   });
 
   const { bloomIntensity, luminanceThreshold, luminanceSmoothing, mipmapBlur } =
     useControls("Bloom", {
-      bloomIntensity: { value: 1.84, min: 0, max: 3, step: 0.01 },
+      bloomIntensity: { value: 3, min: 0, max: 3, step: 0.01 },
       luminanceThreshold: { value: 0.13, min: 0, max: 1, step: 0.01 },
       luminanceSmoothing: { value: 0, min: 0, max: 1, step: 0.001 },
       mipmapBlur: { value: true },
@@ -33,6 +34,7 @@ export default function App() {
             <Experience />
           </Float>
         </Suspense>
+        <CloudEffect />
         <CameraController />
         <EffectComposer>
           <Bloom
@@ -41,6 +43,13 @@ export default function App() {
             luminanceSmoothing={luminanceSmoothing}
             mipmapBlur={mipmapBlur}
           />
+
+          {/* <Vignette
+            offset={0.5} // vignette offset
+            darkness={0.5} // vignette darkness
+            eskil={false} // Eskil's vignette technique
+            blendFunction={BlendFunction.NORMAL} // blend mode
+          /> */}
         </EffectComposer>
       </Canvas>
     </div>

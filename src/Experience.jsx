@@ -10,6 +10,8 @@ export default function Experience() {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        // Enable frustum culling for meshes to skip rendering off-screen objects
+        child.frustumCulled = true;
       }
     });
   }, [scene]);

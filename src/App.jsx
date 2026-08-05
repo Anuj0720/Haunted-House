@@ -2,9 +2,12 @@ import { Suspense, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Float } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { Perf } from "r3f-perf";
 import { Leva, useControls } from "leva";
 import Experience from "./Experience.jsx";
 import CloudEffect from "./CloudEffect.jsx";
+import Bat from "./Bat.jsx";
+import Ghost from "./Ghost.jsx";
 
 export default function App() {
   const { bgColor } = useControls("Background", {
@@ -13,15 +16,15 @@ export default function App() {
 
   const { bloomIntensity, luminanceThreshold, luminanceSmoothing, mipmapBlur } =
     useControls("Bloom", {
-      bloomIntensity: { value: 3, min: 0, max: 3, step: 0.01 },
-      luminanceThreshold: { value: 0.13, min: 0, max: 1, step: 0.01 },
+      bloomIntensity: { value: 1.5, min: 0, max: 3, step: 0.01 },
+      luminanceThreshold: { value: 0.3, min: 0, max: 1, step: 0.01 },
       luminanceSmoothing: { value: 0, min: 0, max: 1, step: 0.001 },
-      mipmapBlur: { value: true },
+      mipmapBlur: { value: false },
     });
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <Leva collapsed={false} />
+      <Leva collapsed={true} />
       <Canvas dpr={[1, 2]} camera={{ position: [51.2, 4, -17.4], fov: 45 }}>
         {/* Background color control from Leva */}
         <color attach="background" args={[bgColor]} />
@@ -33,9 +36,12 @@ export default function App() {
           <Float>
             <Experience />
           </Float>
+          <Bat />
+          <Ghost />
         </Suspense>
         <CloudEffect />
         <CameraController />
+        <Perf position="top-left" />
         <EffectComposer>
           <Bloom
             intensity={bloomIntensity}

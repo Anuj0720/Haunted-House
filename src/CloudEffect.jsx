@@ -9,10 +9,10 @@ export default function CloudEffect() {
 
   const { color, x, y, z, range, ...config } = useControls("Clouds", {
     seed: { value: 31, min: 1, max: 100, step: 1 },
-    segments: { value: 3, min: 1, max: 80, step: 1 },
-    volume: { value: 6.6, min: 0, max: 20, step: 0.1 },
-    opacity: { value: 0.20, min: 0, max: 1, step: 0.01 },
-    fade: { value: 261, min: 0, max: 400, step: 1 },
+    segments: { value: 2, min: 1, max: 80, step: 1 },
+    volume: { value: 4, min: 0, max: 20, step: 0.1 },
+    opacity: { value: 0.15, min: 0, max: 1, step: 0.01 },
+    fade: { value: 100, min: 0, max: 400, step: 1 },
     growth: { value: 5.8, min: 0, max: 20, step: 0.1 },
     speed: { value: 0.01, min: 0, max: 0.5, step: 0.005 },
     x: { value: 0, min: 0, max: 100, step: 1 },

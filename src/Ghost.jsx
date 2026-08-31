@@ -9,8 +9,7 @@ const GHOST_COUNT = 4;
 const WALK_ACTION_NAME = "Armature|Action_Walk";
 
 function createGhostParams() {
-  // Spread hues evenly around the color wheel (with a little jitter) so
-  // every ghost gets a visibly distinct color, then shuffle the order.
+
   const hueStep = 360 / GHOST_COUNT;
   const hues = Array.from(
     { length: GHOST_COUNT },
@@ -27,9 +26,9 @@ function createGhostParams() {
     speed: 0.25 + Math.random() * 0.16,
     scale: 0.9 + Math.random() * 0.5,
     direction: Math.random() > 0.5 ? 1 : -1,
-    // slow, random self-spin speed (radians/sec) — a full 360° turn
-    // takes roughly 25–65 seconds depending on the ghost
-    spinSpeed: 0.1 + Math.random() * 0.15,
+
+    spinSpeed: 0.4 + Math.random() * 0.5,
+    spinPhase: Math.random() * Math.PI * 2,
     color: new THREE.Color(`hsl(${hues[i]}, 70%, 60%)`),
   }));
 }
@@ -62,6 +61,8 @@ function tintMaterial(material, color) {
 
 function GhostInstance({
   gltf,
+  index,
+  positionsRef,
   phase,
   radius,
   speed,
@@ -70,14 +71,17 @@ function GhostInstance({
   offsetY,
   direction,
   spinSpeed,
+  spinPhase,
+  minSeparation,
   color,
 }) {
-  const group = useRef();
-  const rotGroup = useRef();
+
+  const outerGroup = useRef();
+  const spinGroup = useRef();
+  const animRoot = useRef();
   const { scene, animations } = gltf;
 
-  // Clone the scene AND its materials per-instance so each ghost can have
-  // its own color without affecting the shared source model or other ghosts.
+  
   const clonedScene = useMemo(() => {
     const cloned = clone(scene);
     cloned.traverse((child) => {
@@ -88,7 +92,7 @@ function GhostInstance({
     return cloned;
   }, [scene, color]);
 
-  const { actions } = useAnimations(animations, rotGroup);
+  const { actions } = useAnimations(animations, animRoot);
 
   useEffect(() => {
     if (!actions) return;
@@ -108,24 +112,52 @@ function GhostInstance({
     };
   }, [actions]);
 
-  useFrame((state, delta) => {
-    if (!group.current || !rotGroup.current) return;
-    const elapsed = state.clock.elapsedTime * speed * direction + phase;
-    const x = Math.cos(elapsed) * radius;
-    const z = Math.sin(elapsed) * radius;
+  const avoidVector = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame((state) => {
+    if (!outerGroup.current) return;
+
+    const t = state.clock.elapsedTime;
+    const elapsed = t * speed * direction + phase;
+    let x = Math.cos(elapsed) * radius;
+    let z = Math.sin(elapsed) * radius;
     const y = offsetY + Math.cos(elapsed * 1.4) * amplitude;
 
-    group.current.position.set(x, y, z);
+    if (positionsRef?.current) {
+      positionsRef.current.forEach((otherPos, otherIndex) => {
+        if (otherIndex === index || !otherPos) return;
+        avoidVector.set(x - otherPos.x, 0, z - otherPos.z);
+        const dist = avoidVector.length();
+        const minDist = minSeparation;
+        if (dist > 1e-4 && dist < minDist) {
+          const push = (minDist - dist) * 0.5;
+          avoidVector.normalize().multiplyScalar(push);
+          x += avoidVector.x;
+          z += avoidVector.z;
+        } else if (dist <= 1e-4) {
+          x += minDist * 0.5;
+        }
+      });
+    }
 
-    // Own independent slow spin on the Y axis (no longer tied to
-    // facing the direction of travel around the orbit).
-    rotGroup.current.rotation.y += spinSpeed * delta;
+    outerGroup.current.position.set(x, y, z);
+
+    if (positionsRef?.current?.[index]) {
+      positionsRef.current[index].set(x, y, z);
+    }
+
+    if (spinGroup.current) {
+      const angle = spinPhase + t * spinSpeed;
+      if (Number.isFinite(angle)) spinGroup.current.rotation.y = angle;
+    }
   });
 
   return (
-    <group ref={group}>
-      <group ref={rotGroup} scale={scale}>
-        <primitive object={clonedScene} />
+    <group ref={outerGroup}>
+      <group ref={spinGroup} scale={scale}>
+        <group ref={animRoot}>
+          <primitive object={clonedScene} />
+        </group>
       </group>
     </group>
   );
@@ -135,18 +167,31 @@ export default function Ghost() {
   const gltf = useGLTF("/models/ghost2.glb");
   const [ghostParams] = useState(createGhostParams);
 
+
+  useEffect(() => {
+    console.log(
+      "Ghost model animations:",
+      gltf.animations.map((clip) => clip.name),
+    );
+  }, [gltf]);
+
   const {
     globalScale,
     baseOffsetY,
     verticalAmplitude,
     positionRadius,
     speedFactor,
+    minSeparation,
+    spinSpeedFactor,
   } = useControls("Ghosts", {
     globalScale: { value: 0.75, min: 0.4, max: 3, step: 0.05 },
     baseOffsetY: { value: -0.9, min: -8, max: 8, step: 0.05 },
     verticalAmplitude: { value: 2, min: 0, max: 2, step: 0.05 },
     positionRadius: { value: 8.6, min: 1, max: 15, step: 0.1 },
     speedFactor: { value: 0.75, min: 0.1, max: 2, step: 0.05 },
+
+    minSeparation: { value: 3.2, min: 0, max: 8, step: 0.1 },
+    spinSpeedFactor: { value: 1, min: 0, max: 4, step: 0.1 },
   });
 
   const configs = useMemo(
@@ -158,6 +203,7 @@ export default function Ghost() {
         amplitude: verticalAmplitude,
         offsetY: baseOffsetY,
         speed: params.speed * speedFactor,
+        spinSpeed: params.spinSpeed * spinSpeedFactor,
       })),
     [
       ghostParams,
@@ -166,13 +212,39 @@ export default function Ghost() {
       positionRadius,
       speedFactor,
       globalScale,
+      spinSpeedFactor,
     ],
+  );
+
+
+  const positionsRef = useRef(
+    configs.map((cfg) => {
+      const x = Math.cos(cfg.phase) * cfg.radius;
+      const z = Math.sin(cfg.phase) * cfg.radius;
+      return new THREE.Vector3(x, cfg.offsetY, z);
+    }),
   );
 
   return (
     <>
-      {configs.map((props, index) => (
-        <GhostInstance key={index} gltf={gltf} {...props} />
+      {configs.map((cfg, index) => (
+        <GhostInstance
+          key={index}
+          index={index}
+          gltf={gltf}
+          positionsRef={positionsRef}
+          phase={cfg.phase}
+          radius={cfg.radius}
+          speed={cfg.speed}
+          scale={cfg.scale}
+          amplitude={cfg.amplitude}
+          offsetY={cfg.offsetY}
+          direction={cfg.direction}
+          spinSpeed={cfg.spinSpeed}
+          spinPhase={cfg.spinPhase}
+          minSeparation={minSeparation}
+          color={cfg.color}
+        />
       ))}
     </>
   );

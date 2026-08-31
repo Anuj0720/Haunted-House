@@ -1,4 +1,4 @@
-import { Suspense, useRef } from "react";
+import { Suspense, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Float } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
@@ -8,11 +8,16 @@ import Experience from "./Experience.jsx";
 import CloudEffect from "./CloudEffect.jsx";
 import Bat from "./Bat.jsx";
 import Ghost from "./Ghost.jsx";
+import LoadingScreen from "./LoadingScreen.jsx";
 
 export default function App() {
+  const [entered, setEntered] = useState(false);
+
   const { bgColor } = useControls("Background", {
     bgColor: { value: "#000000" },
   });
+
+  const isVisible = false;
 
   const { bloomIntensity, luminanceThreshold, luminanceSmoothing, mipmapBlur } =
     useControls("Bloom", {
@@ -23,8 +28,10 @@ export default function App() {
     });
 
   return (
-    <div style={{ width: "100vw", height: "100vh" }}>
-      <Leva collapsed={true} />
+    <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+      {!entered && <LoadingScreen onEnter={() => setEntered(true)} />}
+
+      <Leva hidden collapsed={true} />
       <Canvas dpr={[1, 2]} camera={{ position: [51.2, 4, -17.4], fov: 45 }}>
         {/* Background color control from Leva */}
         <color attach="background" args={[bgColor]} />
@@ -41,7 +48,7 @@ export default function App() {
         </Suspense>
         <CloudEffect />
         <CameraController />
-        <Perf position="top-left" />
+        {isVisible && <Perf position="top-left" />}
         <EffectComposer>
           <Bloom
             intensity={bloomIntensity}

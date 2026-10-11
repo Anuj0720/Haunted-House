@@ -1,16 +1,64 @@
-# React + Vite
+# Haunted House 👻🏚️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A spooky 3D web experience built with **React Three Fiber**,
+**Three.js**, and **Blender**. Explore a haunted environment featuring
+atmospheric visuals and moon variations.
 
-Currently, two official plugins are available:
+🔗 **Live Demo:** https://haunted-house-u86c.vercel.app/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Main Features
 
-## React Compiler
+-   Interactive 3D haunted-house environment.
+-   Blood moon and white moon visual variations.
+-   Atmospheric lighting and spooky effects.
+-   Ghosts, smoke, and animated bats.
+-   Background music.
+-   Custom loading screen.
+-   3D graphics rendered directly in the browser.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Outputs
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Blood Moon
+
+![Blood Moon Output](./output/blood_moon.png)
+
+### White Moon
+
+![White Moon Output](./output/white_moon.png)
+
+### Normal Scene
+
+![Normal Scene Output](./output/normal.png)
+
+### Loading Screen
+
+![Loading Screen Output](./output/loading.png)
+
+## Clone and Run Locally
+
+### 1. Clone the repository
+
+Replace `https://github.com/Anuj0720/Haunted-House` with your GitHub repository URL.
+
+``` bash
+git clone https://github.com/Anuj0720/Haunted-House.git
+cd haunted house
+```
+
+### 2. Install dependencies
+
+``` bash
+npm install
+```
+
+### 3. Start the development server
+
+``` bash
+npm run dev
+```
+
+Open the local URL shown in your terminal.
+
+> If `npm run dev` is not available, check the scripts in `package.json`
+> and use the development command configured for your project.

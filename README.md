@@ -18,6 +18,14 @@ atmospheric visuals and moon variations.
 
 ## Project Outputs
 
+### Loading Screen
+
+![Loading Screen Output](./output/loading.png)
+
+### Normal Scene
+
+![Normal Scene Output](./output/normal.png)
+
 
 ### Blood Moon
 
@@ -27,13 +35,8 @@ atmospheric visuals and moon variations.
 
 ![White Moon Output](./output/white_moon.png)
 
-### Normal Scene
 
-![Normal Scene Output](./output/normal.png)
 
-### Loading Screen
-
-![Loading Screen Output](./output/loading.png)
 
 ## Clone and Run Locally
 

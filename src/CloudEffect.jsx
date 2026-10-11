@@ -4,10 +4,10 @@ import { useFrame } from "@react-three/fiber";
 import { Clouds, Cloud } from "@react-three/drei";
 import { useControls } from "leva";
 
-export default function CloudEffect() {
+export default function CloudEffect({ active = false }) {
   const cloudRefs = useRef([]);
 
-  const { color, x, y, z, range, ...config } = useControls("Clouds", {
+  const { color: baseColor, x, y, z, range, opacity: baseOpacity, ...config } = useControls("Clouds", {
     seed: { value: 31, min: 1, max: 100, step: 1 },
     segments: { value: 2, min: 1, max: 80, step: 1 },
     volume: { value: 4, min: 0, max: 20, step: 0.1 },
@@ -21,6 +21,11 @@ export default function CloudEffect() {
     range: { value: 17, min: 1, max: 200, step: 1 },
     color: "#dee2e6",
   });
+
+  // With the effects on, the clouds turn into dark, red-lit storm clouds.
+  const color = active ? "#552a33" : baseColor;
+  const opacity = active ? 0.6 : baseOpacity;
+  const tint2 = active ? "#3c2f52" : "#dee2e6";
 
   useFrame((state, delta) => {
     const elapsed = state.clock.elapsedTime;
@@ -47,6 +52,7 @@ export default function CloudEffect() {
         <Cloud
           ref={(el) => (cloudRefs.current[0] = el)}
           {...config}
+          opacity={opacity}
           bounds={[x, y, z]}
           color={color}
           position={[6, 0, 0]}
@@ -55,7 +61,8 @@ export default function CloudEffect() {
           ref={(el) => (cloudRefs.current[1] = el)}
           {...config}
           bounds={[x, y, z]}
-          color="#dee2e6"
+          opacity={opacity}
+          color={tint2}
           seed={2}
           position={[-6, 0, 0]}
         />

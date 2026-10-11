@@ -1,8 +1,672 @@
 @import "tailwindcss";
 
-*{
-    margin:0;
-    padding: 0;
-    box-sizing: border-box;
+/* Display face for the loading-screen title only (falls back to Inter). */
+@font-face {
+  font-family: 'Toxia';
+  src: url('/fonts/toxia.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
 }
 
+:root {
+  --bg: #090b0e;
+  --surface: rgba(16, 19, 24, 0.86);
+  --surface-solid: #101318;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #eceef1;
+  --text-dim: #9aa3ae;
+  --text-faint: #6b7380;
+  --accent: #f2a94e;
+  --accent-ink: #1b1204;
+  --live: #4fd1b8;
+
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Toxia', 'Inter', system-ui, sans-serif;
+
+  --radius: 10px;
+  --pad: clamp(14px, 2.2vw, 24px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Stage ---------- */
+
+.hh-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.hh-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.hh-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 60%, rgba(4, 6, 8, 0.5) 100%);
+}
+
+/* ---------- Shared UI ---------- */
+
+/* Flat, solid panel. No backdrop blur: blurring over a live WebGL canvas makes
+   the GPU re-blur every frame. */
+.ui-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.ui-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--text-dim);
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+.ui-icon-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.hh-link {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, color 0.15s;
+}
+
+.hh-link:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* ---------- Loading screen ---------- */
+
+.hh-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 64px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  text-align: center;
+  background: var(--bg);
+  transition: opacity 0.7s ease-in-out;
+}
+
+.hh-gate.is-exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hh-gate__sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 46% at 50% 40%, rgba(60, 90, 100, 0.2) 0%, rgba(9, 11, 14, 0) 70%),
+    var(--bg);
+}
+
+.hh-gate__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: auto 0;
+}
+
+.hh-house {
+  display: block;
+  width: min(86vw, 520px);
+  height: auto;
+  overflow: visible;
+}
+
+.hh-glow {
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+
+.hh-glow.is-lit {
+  opacity: 1;
+}
+
+.hh-pane {
+  fill: #11171b;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  transition: fill 0.6s ease;
+}
+
+.hh-pane.is-lit {
+  fill: #f3b868;
+}
+
+.hh-title {
+  margin-top: 28px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 5vw, 2.5rem);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.hh-tagline {
+  margin-top: 6px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.hh-progress {
+  width: min(78vw, 320px);
+  margin-top: 32px;
+}
+
+.hh-progress__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.hh-stage {
+  color: var(--text-dim);
+}
+
+.hh-pct {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.hh-bar {
+  height: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.hh-bar__fill {
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.2s linear;
+}
+
+.hh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 28px;
+}
+
+.hh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 22px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.hh-btn:active {
+  transform: translateY(1px);
+}
+
+.hh-btn--primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+.hh-btn--primary:hover {
+  background: #f7b968;
+}
+
+.hh-btn--quiet {
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.hh-btn--quiet:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.hh-gate__credits {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 3;
+  padding: 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+  transition: color 0.15s;
+}
+
+.hh-gate__credits:hover {
+  color: var(--text);
+}
+
+.hh-rise {
+  animation: hh-rise 0.45s ease-out both;
+}
+
+/* ---------- In-scene HUD ---------- */
+
+.ui {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding:
+    max(var(--pad), env(safe-area-inset-top))
+    max(var(--pad), env(safe-area-inset-right))
+    max(var(--pad), env(safe-area-inset-bottom))
+    max(var(--pad), env(safe-area-inset-left));
+  pointer-events: none;
+  animation: hh-fade-in 0.8s ease-out both;
+}
+
+.ui button {
+  pointer-events: auto;
+}
+
+.ui-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.ui-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.ui-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ui-hint {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  animation: hh-hint 10s ease forwards;
+}
+
+/* Animated icon toggles (top right).
+   --tone is the colour a button takes when it is on. Every property that changes
+   with the on/off state eases over ~0.55s, so the handover between the two moon
+   looks is a smooth crossfade rather than a snap. */
+
+.ui-tbtn {
+  --tone: var(--accent);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.55s ease,
+    border-color 0.55s ease, background-color 0.55s ease, box-shadow 0.55s ease;
+  animation: hh-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.ui-tbtn--blood {
+  --tone: #ff6a5c;
+}
+.ui-tbtn--dream {
+  --tone: #86dcf0;
+  animation-delay: 0.06s;
+}
+.ui-tbtn--sound {
+  animation-delay: 0.12s;
+}
+
+.ui-tbtn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  transform: translateY(-2px) scale(1.06);
+}
+
+.ui-tbtn:active {
+  transform: scale(0.88);
+  transition-duration: 0.08s;
+}
+
+.ui-tbtn.is-on,
+.ui-tbtn.is-on:hover {
+  color: var(--tone);
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 16px color-mix(in srgb, var(--tone) 38%, transparent);
+}
+
+/* soft halo: fades in with the state, then breathes while on */
+.ui-tbtn__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--tone) 40%, transparent), transparent 70%);
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+}
+
+.ui-tbtn.is-on .ui-tbtn__glow {
+  opacity: 1;
+  animation: hh-halo 2.4s ease-in-out infinite;
+}
+
+/* ring fired on every state change */
+.ui-tbtn__ripple {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  pointer-events: none;
+  animation: hh-ripple 0.7s ease-out;
+}
+
+.ui-tbtn__icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+}
+
+.ui-tbtn__icon svg {
+  transition: fill 0.55s ease, opacity 0.55s ease;
+  opacity: 0.85;
+}
+
+/* moon buttons: the moon tilts and fills with its colour when on */
+.ui-tbtn--blood.is-on .ui-tbtn__icon,
+.ui-tbtn--dream.is-on .ui-tbtn__icon {
+  transform: rotate(-20deg) scale(1.1);
+}
+.ui-tbtn--blood.is-on .ui-tbtn__icon svg,
+.ui-tbtn--dream.is-on .ui-tbtn__icon svg {
+  fill: color-mix(in srgb, var(--tone) 55%, transparent);
+  opacity: 1;
+}
+
+/* sound: Volume2 <-> VolumeX swap with rotate + scale */
+.ui-tbtn--sound .ui-tbtn__icon--on {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.3);
+}
+.ui-tbtn--sound .ui-tbtn__icon--off {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+.ui-tbtn--sound.is-on .ui-tbtn__icon--on {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+.ui-tbtn--sound.is-on .ui-tbtn__icon--off {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.3);
+}
+
+.ui-tbtn:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 3px;
+}
+
+/* ---------- Credits modal ---------- */
+
+.hh-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 6, 8, 0.72);
+}
+
+.hh-modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 82vh;
+  padding: 24px 26px 26px;
+  overflow-y: auto;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  animation: hh-modal-in 0.2s ease-out both;
+}
+
+.hh-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.hh-modal__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hh-modal__head .ui-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.hh-modal__section + .hh-modal__section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.hh-modal__heading {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.hh-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+/* ---------- Fatal error screen ---------- */
+
+.hh-fatal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  background: var(--bg);
+  color: var(--text-dim);
+}
+
+.hh-fatal h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hh-fatal pre {
+  max-width: min(90vw, 640px);
+  max-height: 40vh;
+  padding: 12px 14px;
+  overflow: auto;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  color: #ffb4a8;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.hh-fatal button {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 8px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  font-weight: 500;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes hh-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hh-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hh-hint {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes hh-pop {
+  from { opacity: 0; transform: translateY(-10px) scale(0.5); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes hh-halo {
+  0%, 100% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes hh-ripple {
+  from { opacity: 0.7; transform: scale(1); }
+  to { opacity: 0; transform: scale(5); }
+}
+
+@keyframes hh-modal-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui,
+  .ui-hint,
+  .hh-rise,
+  .hh-modal,
+  .ui-tbtn,
+  .ui-tbtn__glow,
+  .ui-tbtn__ripple,
+  .ui-tbtn__icon svg {
+    animation: none !important;
+  }
+  .ui-hint {
+    opacity: 1;
+  }
+  .hh-gate,
+  .hh-glow,
+  .hh-pane,
+  .ui-tbtn,
+  .ui-tbtn__icon,
+  .hh-btn,
+  .hh-bar__fill {
+    transition-duration: 0.01ms;
+  }
+}

@@ -20,13 +20,18 @@ function createBatParams() {
 function BatInstance({ gltf, phase, baseY, radius, speed, scale, amplitude }) {
   const group = useRef();
   const { scene, animations } = gltf;
+  // Reused every frame instead of allocating a Vector3 per bat per frame.
+  const lookTarget = useMemo(() => new THREE.Vector3(), []);
+
   const clonedScene = useMemo(() => {
     const cloned = clone(scene);
     cloned.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = false;
         child.receiveShadow = false;
-        child.frustumCulled = true;
+        // Skinned bounds come from the bind pose, so culling makes bats
+        // vanish while still on screen.
+        child.frustumCulled = false;
       }
     });
     return cloned;
@@ -47,13 +52,9 @@ function BatInstance({ gltf, phase, baseY, radius, speed, scale, amplitude }) {
 
     group.current.position.set(x, y, z);
 
-    const target = new THREE.Vector3(
-      Math.cos(elapsed + 0.01) * radius,
-      y,
-      Math.sin(elapsed + 0.01) * radius,
-    );
-
-    group.current.lookAt(target);
+    // Look along the circle's tangent (same heading the old +0.01 lookahead gave).
+    lookTarget.set(x - Math.sin(elapsed), y, z + Math.cos(elapsed));
+    group.current.lookAt(lookTarget);
   });
 
   return (

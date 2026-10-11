@@ -42,8 +42,6 @@ atmospheric visuals and moon variations.
 
 ### 1. Clone the repository
 
-Replace `https://github.com/Anuj0720/Haunted-House` with your GitHub repository URL.
-
 ``` bash
 git clone https://github.com/Anuj0720/Haunted-House.git
 cd haunted house
